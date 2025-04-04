@@ -1,81 +1,73 @@
-let player1, player2, currentPlayer;
-const cells = document.querySelectorAll(".cell");
-const board = document.getElementById("board");
-const message = document.querySelector(".message");
-const submitButton = document.getElementById("submit");
+const submitBtn = document.getElementById("submit");
+const player1Input = document.getElementById("player-1");
+const player2Input = document.getElementById("player-2");
+const playerInputDiv = document.getElementById("playerInput");
+const gameBoardDiv = document.getElementById("gameBoard");
+const messageDiv = document.getElementById("message");
+const boardDiv = document.getElementById("board");
 
-// New Restart Button
-const restartButton = document.createElement("button");
-restartButton.innerText = "Restart Game";
-restartButton.style.display = "none";
-document.body.appendChild(restartButton);
+let currentPlayer = "X";
+let player1, player2;
+let board = ["", "", "", "", "", "", "", "", ""];
+let gameActive = true;
 
-submitButton.addEventListener("click", function() {
-    player1 = document.getElementById("player-1").value;
-    player2 = document.getElementById("player-2").value;
-    
-    if (player1.trim() && player2.trim()) {
-        document.getElementById("player-input").style.display = "none";
-        board.style.display = "grid";
-        currentPlayer = player1;
-        message.innerText = `${currentPlayer}, you're up!`;
-    } else {
-        alert("Please enter names for both players!");
+submitBtn.addEventListener("click", () => {
+    player1 = player1Input.value.trim();
+    player2 = player2Input.value.trim();
+
+    if (player1 === "" || player2 === "") {
+        alert("Please enter both player names");
+        return;
     }
+
+    playerInputDiv.classList.add("hidden");
+    gameBoardDiv.classList.remove("hidden");
+    messageDiv.textContent = `${player1}, you're up!`;
+
+    createBoard();
 });
 
-const winPatterns = [
-    [1, 2, 3], [4, 5, 6], [7, 8, 9], // Rows
-    [1, 4, 7], [2, 5, 8], [3, 6, 9], // Columns
-    [1, 5, 9], [3, 5, 7]             // Diagonals
-];
+function createBoard() {
+    boardDiv.innerHTML = "";
+    for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.id = i;
+        cell.addEventListener("click", handleMove);
+        boardDiv.appendChild(cell);
+    }
+}
 
-function checkWin() {
-    const symbol = currentPlayer === player1 ? "X" : "O";
+function handleMove(event) {
+    if (!gameActive) return;
+    const cell = event.target;
+    const cellIndex = cell.id;
+
+    if (board[cellIndex] !== "") return;
+
+    board[cellIndex] = currentPlayer;
+    cell.textContent = currentPlayer;
+
+    if (checkWinner()) {
+        messageDiv.textContent = `${currentPlayer === "X" ? player1 : player2} congratulations you won!`;
+        gameActive = false;
+        return;
+    }
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    messageDiv.textContent = `${currentPlayer === "X" ? player1 : player2}, you're up!`;
+}
+
+function checkWinner() {
+    const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+        [0, 4, 8], [2, 4, 6]
+    ];
+
     return winPatterns.some(pattern => {
-        return pattern.every(id => document.getElementById(id).innerText === symbol);
+        const [a, b, c] = pattern;
+        return board[a] && board[a] === board[b] && board[a] === board[c];
     });
 }
-
-function checkDraw() {
-    return [...cells].every(cell => cell.innerText !== "");
-}
-
-function handleClick(event) {
-    if (event.target.innerText === "") {
-        event.target.innerText = currentPlayer === player1 ? "X" : "O";
-
-        if (checkWin()) {
-            message.innerText = `${currentPlayer} congratulations, you won! 🎉`;
-            cells.forEach(cell => cell.removeEventListener("click", handleClick));
-            restartButton.style.display = "block";
-            return;
-        }
-
-        if (checkDraw()) {
-            message.innerText = "It's a draw! 😲";
-            restartButton.style.display = "block";
-            return;
-        }
-
-        currentPlayer = currentPlayer === player1 ? player2 : player1;
-        message.innerText = `${currentPlayer}, you're up!`;
-    }
-}
-
-// Restart game function
-restartButton.addEventListener("click", () => {
-    cells.forEach(cell => {
-        cell.innerText = "";
-        cell.addEventListener("click", handleClick);
-    });
-
-    document.getElementById("player-input").style.display = "block";
-    board.style.display = "none";
-    restartButton.style.display = "none";
-    message.innerText = "";
-});
-
-cells.forEach(cell => cell.addEventListener("click", handleClick));
-
 
